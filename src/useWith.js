@@ -1,6 +1,7 @@
 var curry = require('./curry');
 var arity = require('./arity');
 var _slice = require('./slice');
+var aliasFor = require('.aliasFor');
 
 /**
  * Accepts a function `fn` and any number of transformer functions and returns a new
@@ -67,5 +68,7 @@ var useWith = function _useWith(fn /*, transformers */) {
         return fn.apply(this, args.concat(_slice(arguments, tlen)));  // TODO use internal `concat` function?
     }));
 };
+
+aliasFor('useWith').is('disperseTo');
 
 module.exports = useWith;
