@@ -171,44 +171,13 @@
 
 
     /**
-     * Optimized (haha) internal unary curry function.
-     *
-     * @private
-     * @category Function
-     * @param {Function} fn The function to curry.
-     * @return {Function} curried function
-     * @example
-     *
-     *      var double = function(x) {
-     *        return x * 2;
-     *      };
-     *
-     *      var curried = curry1(double);
-     *      var stillCurried = curried(R.__);
-     *      curried(10);      //=> 20
-     *      stillCurried(10); //=> 20
-     */
-    function curry1(fn) {
-        return function(a) {
-            if (a === R.__) {
-                return curry1(function(x) {
-                    return fn(x);
-                });
-            } else {
-                return fn(a);
-            }
-        };
-    }
-
-
-    /**
      * Optimized (?) internal two-arity curry function.
      *
      * @private
      * @category Function
      * @param {Function} fn The function to curry.
      * @return {Function} curried function
-     * @example
+     * @examplez
      *
      *      var addTwo = function(a, b) {
      *        return a + b;
@@ -240,22 +209,18 @@
                             return fn(x, y);
                         });
                     }
-                    return curry1(function(y) {
-                        return fn(a, y);
-                    });
+                    return function(y) { return fn(a, y); };
                 default:
                     if (a === R.__ && b === R.__) {
-                        return curry2(function(x, y) {
-                            return fn(x, y);
-                        });
+                        return fn;
                     } else if (a === R.__) {
-                        return curry1(function(x) {
+                        return function(x) {
                             return fn(x, b);
-                        });
+                        };
                     } else if (b === R.__) {
-                        return curry1(function(y) {
+                        return function(y) {
                             return fn(a, y);
-                        });
+                        };
                     }
                     return fn(a, b);
             }
@@ -297,8 +262,9 @@
         return (function recurry(args) {
             return arity(Math.max(length - (args && args.length || 0), 0), function() {
                 if (arguments.length === 0) { throw noArgsException(); }
-                var i, ni, newArgs = R.cloneObj(args);
-                for (i = 0, ni = 0; i < arguments.length; ++i, ++ni) {
+                var i = -1, ni = 0, newArgs = R.cloneObj(args);
+                // for (i = 0, ni = 0; i < arguments.length; ++i, ++ni) {
+                while (++i < arguments.length) {
                     // advance are newArgs index past previously bound args
                     while (ni in newArgs) {
                         ++ni;
@@ -312,21 +278,22 @@
                             newArgs.length++;
                         }
                     }
+                    ni++;
                 }
                 if (newArgs.length >= length) {
                     // get all consecutive args at beginning of newArgs
                     var applyArgs = [];
-                    for (i = 0; 1; ++i) {
-                        if (i in newArgs) {
-                            applyArgs.push(newArgs[i]);
-                        } else {
+                    var j = 0;
+                    while (true) {
+                        if (!(j in newArgs)) {
                             break;
                         }
+                        applyArgs.push(newArgs[j]);
+                        j++;
                     }
                     return fn.apply(this, applyArgs);
-                } else {
-                    return recurry(newArgs);
                 }
+                return recurry(newArgs);
             });
         }({length:0}));
     };
