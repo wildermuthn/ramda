@@ -262,16 +262,16 @@
         return (function recurry(args) {
             return arity(Math.max(length - (args && args.length || 0), 0), function() {
                 if (arguments.length === 0) { throw noArgsException(); }
-                var i = -1, ni = 0, newArgs = R.cloneObj(args);
+                var idx = -1, ni = 0, newArgs = R.cloneObj(args);
                 // for (i = 0, ni = 0; i < arguments.length; ++i, ++ni) {
-                while (++i < arguments.length) {
+                while (++idx < arguments.length) {
                     // advance are newArgs index past previously bound args
                     while (ni in newArgs) {
                         ++ni;
                     }
-                    if (arguments[i] !== R.__) {
+                    if (arguments[idx] !== R.__) {
                         // add all non-placeholder args
-                        newArgs[ni] = arguments[i];
+                        newArgs[ni] = arguments[idx];
                         // only increment length if we are less then length
                         // so we know when to apply our function
                         if (ni < length) {
@@ -283,13 +283,13 @@
                 if (newArgs.length >= length) {
                     // get all consecutive args at beginning of newArgs
                     var applyArgs = [];
-                    var j = 0;
+                    var jdx = 0;
                     while (true) {
-                        if (!(j in newArgs)) {
+                        if (!(jdx in newArgs)) {
                             break;
                         }
-                        applyArgs.push(newArgs[j]);
-                        j++;
+                        applyArgs.push(newArgs[jdx]);
+                        jdx++;
                     }
                     return fn.apply(this, applyArgs);
                 }
