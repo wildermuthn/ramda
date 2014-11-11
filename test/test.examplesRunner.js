@@ -21,7 +21,7 @@ ExampleTest.prototype.getFunctionName = function(code) {
     if ((matches = func_line.match(/^function (\w+)/)) !== null) {
         return matches[1];
     } else if ((matches = func_line.match(/([\w\.]+\s*=\s*)+/)) !== null) {
-        var names = R.reject(R.isEmpty, R.map(R.invoker(String.prototype.trim), matches[0].split('=')));
+        var names = R.reject(R.isEmpty, R.map(R.invokerN(0, 'trim'), matches[0].split('=')));
         var ramda_func = R.find(R.match(/^R\./), names);
         return (names.length === 0) ? false : ((R.isEmpty(ramda_func)) ? names[0] : ramda_func);
     } else {
@@ -122,7 +122,7 @@ function runExample(e) {
 }
 
 function checkForAliasExample(e) {
-    it(e.func_name + ' should have example or be an alias for function that has exmample', function() {
+    it(e.func_name + ' has example or is an alias for function that has example', function() {
         // TODO: uncomment to enforce this
       //   if (R.isEmpty(e.alias_of)) {
       //       fail('undefined', 'example source', 'function has no example and no alias');

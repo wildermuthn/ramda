@@ -1,23 +1,20 @@
+var envvar = require('envvar');
 var sauceConf = require('./sauce/conf');
 var sauceSrv = require('./sauce/server');
+
+var ORCHESTRATE_API_KEY = envvar.string('ORCHESTRATE_API_KEY', '');
+var SAUCE_ACCESS_KEY    = envvar.string('SAUCE_ACCESS_KEY', '');
+var TRAVIS_BRANCH       = envvar.string('TRAVIS_BRANCH', '');
+var TRAVIS_BUILD_ID     = envvar.string('TRAVIS_BUILD_ID', '');
+var TRAVIS_COMMIT       = envvar.string('TRAVIS_COMMIT', '');
+var TRAVIS_COMMIT_RANGE = envvar.string('TRAVIS_COMMIT_RANGE', '');
+var TRAVIS_NODE_VERSION = envvar.string('TRAVIS_NODE_VERSION', process.versions.node);
+var TRAVIS_TAG          = envvar.string('TRAVIS_TAG', '');
 
 module.exports = function(grunt) {
     grunt.initConfig({
 
-        pkg: grunt.file.readJSON('package.json'),
-
-        orchestrate_token: process.env.ORCHESTRATE_API_KEY,
-
-        uglify: {
-            options: {
-                banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
-            },
-            dist: {
-                files: {
-                    'dist/<%= pkg.name %>.min.js': ['<%= pkg.name %>.js']
-                }
-            }
-        },
+        orchestrate_token: ORCHESTRATE_API_KEY,
 
         mocha: {
             browser: ['test/**/*.html'],
@@ -27,18 +24,28 @@ module.exports = function(grunt) {
         },
 
         mochaTest: {
+            docs: {
+                options: {
+                    reporter: 'spec'
+                },
+                src: ['test/test.examplesRunner.js']
+            },
             test: {
                 options: {
-                    // reporter: 'progress'
-                    // reporter: 'list'
                     reporter: 'spec'
                 },
                 src: ['test/**/*.js', 'ext/**/test/*.js']
+            },
+            unit: {
+                options: {
+                    reporter: 'spec'
+                },
+                src: ['test/**/*.js', '!test/test.examplesRunner.js', 'ext/**/test/*.js']
             }
         },
 
         jscs: {
-            files: ['**/*.js', '!{lib/test,node_modules,sauce}/**'],
+            files: ['**/*.js', '!{lib/test,node_modules}/**'],
             options: {
                 config: '.jscsrc',
                 excludeFiles: ['**/*.min.js']
@@ -46,7 +53,7 @@ module.exports = function(grunt) {
         },
 
         jshint: {
-            files: ['**/*.js', '!{lib/test,node_modules,sauce}/**'],
+            files: ['**/*.js', '!{lib/test,node_modules}/**'],
             options: {
                 ignores: ['**/*.min.js'],
                 jshintrc: '.jshintrc'
@@ -60,45 +67,16 @@ module.exports = function(grunt) {
             }
         },
 
-        clean: {
-            dist: {
-                src: ['dist']
-            }
-        },
-
-        copy: {
-            dist: {
-                files: [
-                    {expand: true, src: ['docs/*'], dest: 'dist/docs'},
-                    {expand: true, src: ['ramda.js', 'package.json', 'bower.json', 'LICENSE.txt', 'README.md'], dest: 'dist'}
-                ]
-            }
-        },
-
-        push: {
-            options: {
-                files: ['package.json', 'bower.json', 'ramda.js'],
-                add: false,
-                commit: false,
-                createTag: false,
-                push: false
-            }
-        },
-
         'saucelabs-mocha': sauceConf,
 
         connect: sauceSrv
     });
 
-    grunt.loadNpmTasks('grunt-contrib-uglify');
     grunt.loadNpmTasks('grunt-contrib-jshint');
-    grunt.loadNpmTasks('grunt-contrib-clean');
     grunt.loadNpmTasks('grunt-contrib-connect');
-    grunt.loadNpmTasks('grunt-contrib-copy');
     grunt.loadNpmTasks('grunt-jscs');
     grunt.loadNpmTasks('grunt-mocha');
     grunt.loadNpmTasks('grunt-mocha-test');
-    grunt.loadNpmTasks('grunt-push-release');
     grunt.loadNpmTasks('grunt-benchmark');
     grunt.loadNpmTasks('grunt-saucelabs');
 
@@ -116,12 +94,12 @@ module.exports = function(grunt) {
                 json.timestamp = timestamp;
                 json.datestamp = (new Date(+timestamp)).toISOString();
                 json.platform = {
-                    branch: process.env.TRAVIS_BRANCH,
-                    buildId: process.env.TRAVIS_BUILD_ID,
-                    commit: process.env.TRAVIS_COMMIT,
-                    commitRange: process.env.TRAVIS_COMMIT_RANGE,
-                    tag: process.env.TRAVIS_TAG,
-                    node: process.env.TRAVIS_NODE_VERSION || process.versions.node
+                    branch:       TRAVIS_BRANCH,
+                    buildId:      TRAVIS_BUILD_ID,
+                    commit:       TRAVIS_COMMIT,
+                    commitRange:  TRAVIS_COMMIT_RANGE,
+                    tag:          TRAVIS_TAG,
+                    node:         TRAVIS_NODE_VERSION
                 };
                 json.report = grunt.file.readJSON(abspath);
                 db.put('benchmarks', json.timestamp, json)
@@ -139,12 +117,8 @@ module.exports = function(grunt) {
     });
 
     grunt.registerTask('bench', ['benchmark', 'uploadBenchmarks']);
-    grunt.registerTask('dist', ['uglify', 'copy:dist']);
-    grunt.registerTask('min', ['jshint', 'mochaTest:test', 'uglify']);
-    grunt.registerTask('publish', ['push', 'version']);
-    grunt.registerTask('sauce', (function() {
-        return (typeof process.env.SAUCE_ACCESS_KEY === 'undefined') ? [] : ['connect', 'saucelabs-mocha'];
-    }()));
+    grunt.registerTask('sauce', SAUCE_ACCESS_KEY === '' ? [] : ['connect', 'saucelabs-mocha']);
     grunt.registerTask('test', ['jshint', 'jscs', 'mochaTest:test']);
-    grunt.registerTask('version', ['clean:dist', 'jshint', 'uglify', 'copy:dist']);
+    grunt.registerTask('unittest', ['mochaTest:unit']);
+    grunt.registerTask('doctest', ['mochaTest:docs']);
 };
