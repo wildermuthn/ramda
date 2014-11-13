@@ -5856,6 +5856,35 @@
      */
     R.functionsIn = _functionsWith(keysIn);
 
+    /**
+     * transducer-ish
+     */
+    R.xf = {
+        transduce: curry(function xf_transduce(xform, f, init, coll) {
+            return R.reduce(xform(f), init, coll);
+        },
+    
+        convert: function xf_convert(fn) {
+            return fn(R.xf);
+        },
+    
+        compose: function xf_compose() {
+            var funcs = R.map(R.xf.convert, _slice(arguments));
+            return R.compose.apply(null, funcs);
+        },
+    
+        concat: function xf_concat(a, b) {
+            return a.concat([b]);
+        },
+
+        map: R.curry(function xf_map(transform, collectionFn, result, input) {
+            return collectionFn(result, transform(input));
+        },
+
+        filter: R.curry(function xf_filter(pred, collectionFn, result, input) {
+            return (pred(input) ? collectionFn(result, input) : result);
+        }
+    };
 
     // All the functional goodness, wrapped in a nice little package, just for you!
     return R;
